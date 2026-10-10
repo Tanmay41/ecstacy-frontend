@@ -1,16 +1,52 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Sidebar from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 import DarkVeil from '@/components/DarkVeil'
 import { Toaster } from '@/components/ui/sonner'
 
+function LoadingShell() {
+  return (
+    <div className="relative z-0 flex h-screen">
+      <div className="fixed inset-0 -z-10">
+        <DarkVeil hueShift={70} noiseIntensity={0.08} speed={0.5} warpAmount={1} />
+      </div>
+      <div className="hidden w-56 shrink-0 border-r border-border bg-sidebar/60 backdrop-blur-2xl md:block">
+        <div className="flex items-center gap-2.5 border-b border-border px-5 py-4">
+          <span className="text-xl text-primary">✦</span>
+          <span className="text-lg font-bold text-foreground">ecstacy</span>
+        </div>
+        <div className="space-y-2 p-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="skeleton h-9 w-full" />
+          ))}
+        </div>
+      </div>
+      <div className="flex flex-1 flex-col overflow-hidden bg-background/60 backdrop-blur-2xl">
+        <div className="flex items-center justify-between border-b border-border bg-background/80 px-6 py-3">
+          <div className="skeleton h-5 w-32" />
+          <div className="skeleton h-8 w-24 rounded-lg" />
+        </div>
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="skeleton mb-6 h-8 w-48" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="skeleton h-28 rounded-xl" />
+            ))}
+          </div>
+        </main>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -21,17 +57,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [user, loading, mounted, router])
 
-  if (!mounted || loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    )
-  }
+  if (!mounted || loading) return <LoadingShell />
 
   if (!user) return null
 
-  // Full-screen ban overlay — cold, final message
   if (user.status === 'banned') {
     return (
       <div className="relative z-0 flex h-screen items-center justify-center bg-background">
@@ -69,16 +98,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
       <Sidebar />
       <div className="flex flex-1 flex-col overflow-hidden bg-background/60 backdrop-blur-2xl">
-        <header className="flex items-center justify-end border-b border-border bg-background/80 px-6 py-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => { await logout(); window.location.href = '/login' }}
-          >
-            Sign Out
-          </Button>
-        </header>
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div key={pathname} className="animate-fade-in">
+            {children}
+          </div>
+        </main>
       </div>
       <Toaster />
     </div>

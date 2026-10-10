@@ -23,6 +23,7 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip'
 import { RiEyeLine, RiTimeLine, RiDeleteBinLine, RiUserLine } from '@remixicon/react'
+import CopyButton from '@/components/CopyButton'
 import {
   Select,
   SelectContent,
@@ -202,9 +203,30 @@ export default function KeysPage() {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="overflow-hidden rounded-xl border border-border">
+          <div className="space-y-0">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className={`flex items-center gap-4 border-b border-border px-4 py-3 ${i === 4 ? 'border-b-0' : ''}`}>
+                <div className="skeleton h-4 w-44" />
+                <div className="skeleton h-4 w-16" />
+                <div className="skeleton h-4 w-24" />
+                <div className="skeleton h-5 w-16 rounded-full" />
+                <div className="ml-auto flex gap-2">
+                  <div className="skeleton h-7 w-7 rounded-md" />
+                  <div className="skeleton h-7 w-7 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : keys.length === 0 ? (
-        <p className="text-muted-foreground">No keys found</p>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
+          <RiTimeLine className="mb-3 h-8 w-8 text-muted-foreground/40" />
+          <p className="text-sm font-medium text-muted-foreground">No keys found</p>
+          <p className="mt-1 text-xs text-muted-foreground/60">
+            {isAdmin ? 'Generate keys using the form above.' : 'Purchase a key from our Discord or store to get started.'}
+          </p>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-sm">
@@ -222,7 +244,12 @@ export default function KeysPage() {
             <tbody>
               {sortedKeys.map((k) => (
                 <tr key={k.id} className="border-b border-border hover:bg-muted/50">
-                  <td className="max-w-[180px] truncate px-4 py-3 font-mono text-xs text-foreground">{k.keyValue}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="max-w-[160px] truncate font-mono text-xs text-foreground">{k.keyValue}</span>
+                      <CopyButton text={k.keyValue} />
+                    </div>
+                  </td>
                   <td className="px-4 py-3 capitalize text-muted-foreground">{k.type}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     {k.product && typeof k.product === 'object'
