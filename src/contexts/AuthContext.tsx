@@ -21,15 +21,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const { data } = await api.get<ApiResponse>('/auth/me')
+      if (data.user) {
+        setUser(prev => {
+          const next = { ...prev, ...data.user } as User
+          localStorage.setItem('user', JSON.stringify(next))
+          return next
+        })
+      }
+    } catch { /* ignore — 401 interceptor handles logout */ }
+  }, [])
+
   useEffect(() => {
     const stored = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
     if (stored && storedUser) {
       setToken(stored)
       setUser(JSON.parse(storedUser))
+      refreshUser()
     }
     setLoading(false)
-  }, [])
+  }, [refreshUser])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (localStorage.getItem('token')) refreshUser()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [refreshUser])
 
   const login = useCallback(async (username: string, password: string) => {
     const { data } = await api.post<ApiResponse<LoginResponse>>('/auth/login', { username, password })
@@ -60,16 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user')
     setToken(null)
     setUser(null)
-  }, [])
-
-  const refreshUser = useCallback(async () => {
-    try {
-      const { data } = await api.get<ApiResponse>('/auth/me')
-      if (data.user) {
-        setUser(data.user)
-        localStorage.setItem('user', JSON.stringify(data.user))
-      }
-    } catch { /* ignore */ }
   }, [])
 
   return (
