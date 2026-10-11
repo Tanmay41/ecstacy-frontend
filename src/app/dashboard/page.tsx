@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [keys, setKeys] = useState<Key[]>([])
+  const [userCount, setUserCount] = useState<number | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -21,13 +22,17 @@ export default function DashboardPage() {
       api.get<ApiResponse>('/keys').then((r) => {
         if (r.data.keys) setKeys(r.data.keys)
       }).catch(() => {})
-    } else if (user.role === 'customer') {
+    } else if (user.role === 'admin') {
       api.get<ApiResponse>('/keys').then((r) => {
         if (r.data.keys) setKeys(r.data.keys)
       }).catch(() => {})
+      api.get('/users?limit=1').then((r) => {
+        const total = (r.data as Record<string, number>).total
+        if (typeof total === 'number') setUserCount(total)
+      }).catch(() => {})
     } else {
-      api.get<ApiResponse>('/admin/stats').then((r) => {
-        if (r.data.stats) setStats(r.data.stats)
+      api.get<ApiResponse>('/keys').then((r) => {
+        if (r.data.keys) setKeys(r.data.keys)
       }).catch(() => {})
     }
   }, [user])
@@ -56,15 +61,17 @@ export default function DashboardPage() {
       <div>
         <h1 className="mb-6 text-2xl font-bold text-foreground">Overview</h1>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Total Users" value={stats?.totalUsers ?? '—'} />
-          <StatCard label="Active Users" value={stats?.activeUsers ?? '—'} />
-          <StatCard label="Suspended" value={stats?.suspendedUsers ?? '—'} />
-          <StatCard label="Total Keys" value={stats?.totalKeys ?? '—'} />
+          <StatCard label="Users" value={userCount ?? '—'} />
+          <StatCard label="Total Keys" value={keys.length} />
+          <StatCard label="Active Keys" value={keys.filter((k) => k.status === 'active').length} />
+          <StatCard label="Revoked" value={keys.filter((k) => k.status === 'revoked').length} />
         </div>
       </div>
     )
   }
 
+  const activeKey = keys.find((k) => k.status === 'active' && (!k.expiresAt || new Date(k.expiresAt) > new Date()))
+  const displayKey = activeKey || keys[0]
   const products = Array.from(
     new Map(
       keys
@@ -84,15 +91,15 @@ export default function DashboardPage() {
         <Card>
           <CardHeader><CardTitle className="text-sm text-muted-foreground">License Key</CardTitle></CardHeader>
           <CardContent>
-            <p className="text-lg font-semibold text-foreground">{keys[0] ? keys[0].keyValue : 'No key'}</p>
-            <p className="text-xs text-muted-foreground">{keys[0]?.type || ''}</p>
+            <p className="text-lg font-semibold text-foreground">{displayKey ? displayKey.keyValue : 'No key'}</p>
+            <p className="text-xs text-muted-foreground">{displayKey?.type || ''}</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle className="text-sm text-muted-foreground">Key Status</CardTitle></CardHeader>
           <CardContent>
-            <p className={`text-lg font-semibold ${keys[0]?.status === 'active' ? 'text-green-400' : 'text-muted-foreground'}`}>
-              {keys[0]?.status || '—'}
+            <p className={`text-lg font-semibold ${activeKey ? 'text-green-400' : 'text-muted-foreground'}`}>
+              {activeKey ? 'Active' : displayKey?.status || 'No key'}
             </p>
           </CardContent>
         </Card>

@@ -58,6 +58,7 @@ const adminSections: NavSection[] = [
   {
     label: 'Management',
     links: [
+      { href: '/dashboard/download', label: 'Download', icon: <RiDownload2Line size={16} /> },
       { href: '/dashboard/keys', label: 'Keys', icon: <RiKey2Line size={16} /> },
       { href: '/dashboard/admin/products', label: 'Products', icon: <RiDatabase2Line size={16} /> },
       { href: '/dashboard/users', label: 'Users', icon: <RiUserSearchLine size={16} /> },
